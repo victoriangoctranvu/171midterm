@@ -3,9 +3,9 @@ import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { connectStorageEmulator, getStorage } from "firebase/storage";
 
-
 const useEmulator = () => import.meta.env.VITE_USE_FIREBASE_EMULATOR;
 
+// Initialize Firebase immediately when the file loads
 export const firebaseApp = initializeApp({
   apiKey: import.meta.env.VITE_FIREBASE_APIKEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTHDOMAIN,
@@ -16,21 +16,20 @@ export const firebaseApp = initializeApp({
   appId: import.meta.env.VITE_FIREBASE_APPID,
 });
 
-let auth: Auth;
+// Initialize and export auth directly so your components can access it securely
+export const auth = getAuth(firebaseApp);
+if (useEmulator()) {
+  connectAuthEmulator(auth, 'http://localhost:9099');
+}
+
 let firestore: ReturnType<typeof getFirestore>;
 let storage: ReturnType<typeof getStorage>;
 
-export const useAuth = () => {
-  auth = getAuth(firebaseApp);
-  if (useEmulator()) {
-    connectAuthEmulator(auth, 'http://localhost:9099');
-  }
-  return auth;
-};
+export const useAuth = () => auth;
 
 export const useFirestore = () => {
   if (!firestore) {
-    firestore = getFirestore();
+    firestore = getFirestore(firebaseApp);
     if (useEmulator()) {
       connectFirestoreEmulator(firestore, 'localhost', 8080);
     }
@@ -40,7 +39,7 @@ export const useFirestore = () => {
 
 export const useStorage = () => {
   if (!storage) {
-    storage = getStorage();
+    storage = getStorage(firebaseApp);
     if (useEmulator()) {
       connectStorageEmulator(storage, 'localhost', 9199);
     }
